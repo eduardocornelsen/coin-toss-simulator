@@ -2,16 +2,16 @@ import pandas as pd
 import scipy.stats
 import streamlit as st
 import time
-import altair as alt # NOVO: Importe para visualização avançada
+import altair as alt # Import for advanced visualization
 
-# --- Dicionário de Textos (Multi-idioma) ---
+# --- Text Dictionary (Multi-language) ---
 TEXTS = {
     'pt': {
         'title': '🪙 Jogando uma moeda',
         'description': "Este experimento simula o lançamento de uma moeda não viciada (probabilidade $P=0.5$). A **Lei dos Grandes Números** diz que, quanto mais lançamentos você fizer, mais a média observada (**Proporção de Caras**) se aproximará do valor esperado teórico de 0.5. Use o controle deslizante para definir o número de tentativas e clique em **Executar** para iniciar.",
         'slider_label': 'Número de tentativas?',
         'execute_button': 'Executar',
-        'running_message': '🚀 Executando o Experimento de {n} tentativas.',
+        'running_message': '🚀 Executando o Experimento de {n} tentativas...',
         'success_message': '✅ Experimento #{n} concluído. Proporção de Caras: {mean:.4f}',
         'history_header': '📊 Histórico de Resultados Acumulados',
         'download_button': 'Baixar Resultados (CSV)',
@@ -42,7 +42,7 @@ TEXTS = {
         'description': "This experiment simulates the toss of an unbiased coin (probability $P=0.5$). The **Law of Large Numbers** states that the more trials you run, the closer the observed mean (**Heads Proportion**) will approach the theoretical expected value of 0.5. Use the slider to set the number of trials and click **Execute** to start.",
         'slider_label': 'Number of trials?',
         'execute_button': 'Execute',
-        'running_message': '🚀 Running Experiment with {n} trials.',
+        'running_message': '🚀 Running Experiment with {n} trials...',
         'success_message': '✅ Experiment #{n} finished. Heads Proportion: {mean:.4f}',
         'history_header': '📊 Accumulated Results History',
         'download_button': 'Download Results (CSV)',
@@ -55,7 +55,6 @@ TEXTS = {
         'y_axis': 'Proportion of Heads (Mean)',
         'sim_legend': 'Simulation (Heads)',
         'exp_legend': 'Expected (Theoretical)',
-        # NOVO: Chaves para Contadores e Tabela
         'result_counts_header': 'Absolute Counts of Last Experiment',
         'heads_label': 'Heads',
         'tails_label': 'Tails',
@@ -70,172 +69,190 @@ TEXTS = {
     }
 }
 
-# --- Funções de Ajuda para i18n ---
+# --- Helper Functions for i18n ---
 def get_current_language():
-    """Retorna o código do idioma atual ('pt' ou 'en')."""
-    return st.session_state.get('language', 'pt') # Padrão: Português
+    """Returns the current language code ('pt' or 'en')."""
+    return st.session_state.get('language', 'pt') # Default: Portuguese
 
 def get_text(key):
-    """Retorna o texto correspondente à chave no idioma atual."""
+    """Returns the text corresponding to the key in the current language."""
     lang = get_current_language()
     return TEXTS[lang].get(key, TEXTS['pt'].get(key, f'MISSING TEXT: {key}'))
 
 def toggle_language():
-    """Alterna entre Português e Inglês e força o Streamlit a re-executar."""
+    """Toggles between Portuguese and English and forces Streamlit to rerun."""
     current_lang = get_current_language()
     new_lang = 'en' if current_lang == 'pt' else 'pt'
     st.session_state['language'] = new_lang
 
-# --- Injeção de CSS para Remover Espaço Superior e Ajustar Botão ---
-# Isso reduz o padding padrão que o Streamlit coloca no topo da página.
+# --- CSS Injection to Remove Top Space and Adjust Button ---
+# This reduces the default padding Streamlit puts at the top of the page.
 st.markdown("""
 <style>
-    /* Alvo: container principal da página Streamlit */
+    /* Target: Streamlit main page container */
     .block-container {
-        padding-top: 3rem; /* Reduz o padding superior para um valor menor (1rem = ~16px) */
+        padding-top: 3rem; /* Reduces top padding to a smaller value (1rem = ~16px) */
         padding-bottom: 0rem;
         padding-left: 1rem;
         padding-right: 1rem;
     }
-    /* Alvo: o elemento que contém o título H1/H2, ajustando sua margem superior */
+    /* Target: the element containing the H1/H2 title, adjusting its top margin */
     h1 {
         margin-top: 0rem; 
         padding-top: 0rem;
     }
-    /* NOVO: Reduz a altura dos botões para torná-los menos altos */
+    /* Reduces button height to make them less tall */
     .stButton > button {
         padding-top: 4px !important;
         padding-bottom: 4px !important;
-        line-height: 1; /* Ajuda a centralizar o texto após reduzir o padding */
+        line-height: 1; /* Helps center text after reducing padding */
+    }
+    
+    /* === NEW: Custom Styles for Metric Highlighting === */
+    /* Style for Heads (Success/Green, similar to st.success) */
+    .heads-container {
+        border-left: 5px solid #388E3C; /* Dark Green Border */
+        background-color: #E8F5E9; /* Light Green Background */
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 15px; /* Added space below the container */
+    }
+    /* Style for Tails (Info/Blue, similar to st.info) */
+    .tails-container {
+        border-left: 5px solid #1976D2; /* Dark Blue Border */
+        background-color: #E3F2FD; /* Light Blue Background */
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 15px; /* Added space below the container */
+    }
+    
+    /* Custom styles for the metric content */
+    /* Ensures H2/H3 for value is clean and aligned */
+    .metric-value-in-container {
+        font-size: 3rem !important; /* FIX: Increased size and added !important */
+        font-weight: 600;
+        margin-top: 0;
+        margin-bottom: 0;
+        line-height: 1.1 !important; /* FIX: Added !important */
+        color: #000000; /* FIX: Set value text color to black */
+    }
+    /* Custom style for the metric label within the container */
+    .metric-label-in-container {
+        font-size: 14px;
+        font-weight: bold;
+        color: #333333;
+        margin-bottom: 5px;
+        margin-top: 0;
+    }
+    /* NEW: Style for Percentage text (smaller, gray) */
+    .metric-percentage {
+        font-size: 0.9rem;
+        color: #666666;
+        margin-top: 0px;
+        margin-bottom: 0px;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# --- Variáveis Persistentes (Session State) ---
-# Inicializa o estado do idioma se não existir
+# --- Persistent Variables (Session State) ---
+# Initialize language state if it doesn't exist
 if 'language' not in st.session_state:
     st.session_state['language'] = 'pt' 
     
-# Estas variáveis são preservadas à medida que o Streamlit executa novamente este script
+# These variables are preserved as Streamlit reruns this script
 if 'experiment_no' not in st.session_state:
-    # Inicializa o contador de experimentos
+    # Initializes the experiment counter
     st.session_state['experiment_no'] = 0 
 
 if 'df_experiment_results' not in st.session_state:
-    # CORRIGIDO: Adiciona colunas para contagem absoluta de Caras e Coroas
+    # Adds columns for absolute counts of Heads and Tails
     st.session_state['df_experiment_results'] = pd.DataFrame(columns=['no', 'iterations', 'mean', 'heads', 'tails'])
 
-# --- Função de Callback para Limpar Resultados ---
+# --- Callback Function to Clear Results ---
 def clear_results():
-    """Limpa o contador e o DataFrame de resultados no Session State."""
+    """Clears the counter and the results DataFrame in the Session State."""
     st.session_state['experiment_no'] = 0
     st.session_state['df_experiment_results'] = pd.DataFrame(columns=['no', 'iterations', 'mean', 'heads', 'tails'])
     st.toast(get_text('clear_toast'), icon='🗑️')
 
-# --- Função de Criação do Gráfico Altair ---
+# --- Altair Chart Creation Function ---
 def create_altair_chart(data_points):
-    """Cria o gráfico Altair com linha pontilhada para o valor teórico."""
+    """Creates the Altair chart with a dotted line for the theoretical value."""
     
-    # 1. Prepara o DataFrame para Altair
-    # Transforma a lista de dicionários em DataFrame e adiciona a coluna de índice (Iteração)
+    # 1. Prepare DataFrame for Altair
+    # Transforms the list of dictionaries into a DataFrame and adds the index column (Iteration)
     df_chart = pd.DataFrame(data_points).reset_index().rename(columns={'index': 'Iteração'})
     
-    # Mapeia as legendas do gráfico de acordo com o idioma
+    # Map chart legends according to the language
+    # CORREÇÃO: Mapeia as legendas internas para as chaves de tradução
     df_chart = df_chart.rename(columns={
-        'Simulação': get_text('sim_legend'),
-        'Esperado (Teórico)': get_text('exp_legend')
+        get_text('sim_legend'): get_text('sim_legend'), # Mantém a string traduzida
+        get_text('exp_legend'): get_text('exp_legend')  # Mantém a string traduzida
     })
 
-    # NOVO: Obtém o nome da coluna de média traduzido
+    # NEW: Get the translated mean type column name
     mean_type_column_name = get_text('mean_type_label')
 
-    # Derrete (melt) o DataFrame para ter as colunas na mesma coluna 'Tipo de Média'
+    # Melt the DataFrame to have the columns in the same 'Mean Type' column
     df_melted = df_chart.melt(
         id_vars=['Iteração'], 
         value_vars=[get_text('sim_legend'), get_text('exp_legend')],
-        var_name=mean_type_column_name, # CORRIGIDO: Usa o nome traduzido da coluna
+        var_name=mean_type_column_name, # CORRECTED: Uses the translated column name
         value_name='Valor'
     )
 
-    # 2. Configuração Base do Gráfico
+    # 2. Base Chart Configuration
     base = alt.Chart(df_melted).encode(
-        # CORREÇÃO AQUI: Adicionado format='d' para forçar o eixo X a usar formato de inteiro
+        # CORRECTION HERE: Added format='d' to force the X-axis to use integer format
         x=alt.X('Iteração:Q', axis=alt.Axis(title=get_text('x_axis'), format='d')),
         y=alt.Y('Valor:Q', scale=alt.Scale(domain=[0, 1]), axis=alt.Axis(title=get_text('y_axis'))),
-        color=f'{mean_type_column_name}:N' # CORRIGIDO: Usa a coluna traduzida na codificação de cor
+        color=f'{mean_type_column_name}:N' # CORRECTED: Uses the translated column in color encoding
     ).properties(
-        # Título agora é dinâmico
+        # Title is now dynamic
         title=[
             get_text('graph_title_1'), 
             get_text('graph_title_2')
         ],
-        height=450 # NOVO: Define uma altura fixa de 450 pixels
+        height=450 # NEW: Sets a fixed height of 450 pixels
     )
 
-    # 3. Estilização da Linha (aqui entra o pontilhado)
+    # 3. Line Styling (here comes the dotted line)
     line = base.mark_line().encode(
-        # Condição que aplica o estilo tracejado/pontilhado à linha 'Esperado (Teórico)' (usando o texto dinâmico)
+        # Condition that applies the dashed/dotted style to the 'Expected (Theoretical)' line (using dynamic text)
         strokeDash=alt.condition(
-            alt.datum[mean_type_column_name] == get_text('exp_legend'), # Usa a coluna traduzida aqui
-            alt.value([5, 5]), # [tamanho do traço, tamanho do espaço]
-            alt.value([0])     # Linha sólida para Simulação
+            alt.datum[mean_type_column_name] == get_text('exp_legend'), # Uses the translated column here
+            alt.value([5, 5]), # [dash size, space size]
+            alt.value([0])     # Solid line for Simulation
         )
     ).interactive()
     
-    # 4. Configuração da Legenda (Move a legenda para a parte inferior)
+    # 4. Legend Configuration (Moves the legend to the bottom)
     line = line.configure_legend(
-        orient='bottom'        # Define a orientação para a parte inferior
+        orient='bottom'        # Sets the orientation to the bottom
     )
     
     return line
 
 
-# --- Interface do Usuário ---
-
-# 1. Título (mantido fora de colunas)
-st.header(get_text('title'))
-
-# 2. Botão de Idioma (Menos alto, mais largo, alinhado à esquerda)
-# Usamos colunas para controlar a largura, mantendo o alinhamento esquerdo
-col_btn_lang, _ = st.columns([2, 5]) # Coluna 2/7 para o botão, 5/7 vazia para torná-lo mais largo que o padrão
-
-with col_btn_lang:
-    st.button(
-        get_text('language_button'), 
-        on_click=toggle_language, 
-        use_container_width=True, # Garante que ele preencha a largura da coluna [2]
-        key="lang_button" # Adicionado key para maior estabilidade
-    )
-
-# 3. Descrição do Experimento agora é dinâmica
-st.markdown(get_text('description'))
-
-# NOVO: Cria um placeholder para o gráfico Altair. O gráfico será renderizado DEPOIS da simulação.
-chart_placeholder = st.empty()
-
-# Inicializa o placeholder com um gráfico simples para exibição
-chart_placeholder.altair_chart(
-    create_altair_chart([{'Simulação': 0.5, 'Esperado (Teórico)': 0.5}]),
-    use_container_width=True
-)
-
-# --- Função Principal de Simulação (agora coleta dados E renderiza) ---
+# --- Main Simulation Function (now collects data AND renders) ---
 def toss_coin(n, chart_placeholder):
-    """Simula o lançamento de moeda, coleta a média e renderiza o gráfico progressivamente."""
+    """Simulates the coin toss, collects the mean, and renders the graph progressively."""
     
-    # 1. Simulação: 1 = Cara (Heads), 0 = Coroa (Tails)
+    # 1. Simulation: 1 = Heads, 0 = Tails
     trial_outcomes = scipy.stats.bernoulli.rvs(p=0.5, size=n)
     
-    # MUDANÇA AQUI: Começa a lista de pontos com o estado inicial (0 iterações)
-    data_points = [{'Simulação': 0.5, 'Esperado (Teórico)': 0.5}]
+    # CHANGE HERE: Start the list of points with the initial state (0 iterations)
+    # CORREÇÃO: As chaves internas do dict (Simulação e Esperado (Teórico)) DEVEM ser as chaves traduzidas,
+    # caso contrário, elas não são encontradas no df_chart.rename logo abaixo.
+    data_points = [{get_text('sim_legend'): 0.5, get_text('exp_legend'): 0.5}]
     
     outcome_no = 0
-    outcome_1_count = 0 # Contagem de Caras
+    outcome_1_count = 0 # Heads count
     
-    # Define a frequência de renderização para simular a animação (máximo 50 updates)
+    # Define the rendering frequency to simulate the animation (maximum 50 updates)
     RENDER_FREQUENCY = max(1, n // 50) 
 
-    # Itera sobre os resultados
+    # Iterate over the results
     for i, r in enumerate(trial_outcomes):
         outcome_no += 1
         if r == 1:
@@ -243,101 +260,171 @@ def toss_coin(n, chart_placeholder):
             
         mean = outcome_1_count / outcome_no 
         
-        # Armazena o ponto
-        data_points.append({'Simulação': mean, 'Esperado (Teórico)': 0.5})
+        # Store the point
+        # CORREÇÃO: As chaves devem ser traduzidas para serem consistentes com o renomeamento do DataFrame.
+        data_points.append({get_text('sim_legend'): mean, get_text('exp_legend'): 0.5})
 
-        # NOVO: Renderiza o gráfico periodicamente
+        # NEW: Renders the chart periodically
         if i == n - 1 or (i + 1) % RENDER_FREQUENCY == 0:
             chart_placeholder.altair_chart(
                 create_altair_chart(data_points), 
                 use_container_width=True
             )
-            time.sleep(0.1) # Pausa aumentada para 0.1s para desacelerar a animação
+            time.sleep(0.1) # Pause increased to 0.1s to slow down the animation
 
-    # NOVO: Calcula a contagem final de Coroas (Tails)
+    # NEW: Calculates the final Tails count
     outcome_0_count = n - outcome_1_count
     
-    # CORRIGIDO: Retorna a média final, a lista de pontos E as contagens absolutas
+    # CORRECTED: Returns the final mean, the plot data list AND the absolute counts
     return mean, data_points, outcome_1_count, outcome_0_count 
 
 
-# --- Interface do Usuário (Slider e Botão Lado a Lado) ---
+# --- User Interface ---
 
-# 1. Cria duas colunas para o slider e o botão
+# 1. Title (kept outside columns)
+st.header(get_text('title'))
+
+# 2. Language Button (Less tall, wider, left-aligned)
+# Use columns to control width, maintaining left alignment
+col_btn_lang, _ = st.columns([2, 5]) # Column 2/7 for the button, 5/7 empty to make it wider than default
+
+with col_btn_lang:
+    st.button(
+        get_text('language_button'), 
+        on_click=toggle_language, 
+        use_container_width=True, # Ensures it fills the width of column [2]
+        key="lang_button" # Added key for greater stability
+    )
+
+# 3. Experiment Description is now dynamic
+st.markdown(get_text('description'))
+
+# === NEW LOCATION FOR SLIDER, BUTTON, AND EXECUTION LOGIC ===
+
+# --- User Interface (Slider and Button Side-by-Side) ---
+
+# 1. Create two columns for the slider and the button
 col_slider, col_button = st.columns([4, 1])
 
 with col_slider:
-    # Slider para selecionar o número de tentativas (rótulo dinâmico)
+    # Slider to select the number of trials (dynamic label)
     number_of_trials = st.slider(get_text('slider_label'), 1, 1000, 10)
 
 with col_button:
-    # Botão para iniciar o experimento, alinhado com o slider (rótulo dinâmico)
-    st.write(" ") # Adiciona um pequeno espaço para alinhamento vertical
+    # Button to start the experiment, aligned with the slider (dynamic label)
+    st.write(" ") # Adds a small space for vertical alignment
     start_button = st.button(get_text('execute_button'), use_container_width=True)
 
 
-# --- Lógica de Execução e Armazenamento ---
+# --- CHART DEFINITION LOGIC (MOVED UP) ---
+
+# NEW LOCATION: Create a placeholder for the Altair chart.
+chart_placeholder = st.empty()
+
+# Initialize the placeholder with a simple chart for display
+# CORREÇÃO: Usa as chaves traduzidas para inicializar o gráfico
+chart_placeholder.altair_chart(
+    create_altair_chart([{get_text('sim_legend'): 0.5, get_text('exp_legend'): 0.5}]),
+    use_container_width=True
+)
+
+# --- Execution and Storage Logic ---
 if start_button:
-    # 1. Mensagem inicial (dinâmica)
-    st.write(get_text('running_message').format(n=number_of_trials))
+    # 1. Initial message (dynamic)
+    st.info(get_text('running_message').format(n=number_of_trials))
     
-    # 2. Incrementa o contador de experimento (persistente)
+    # 2. Increment experiment counter (persistent)
     st.session_state['experiment_no'] += 1
 
-    # 3. Adiciona a barra de progresso antes da simulação
-    progress_bar = st.progress(0, text="Simulando Lançamentos...")
+    # 3. Add progress bar before simulation
+    progress_bar = st.progress(0, text="Simulating Tosses...")
     
-    # Simulação Rápida da barra de progresso (visual imediato)
+    # Quick progress bar simulation (immediate visual)
     for i in range(10):
         time.sleep(0.02)
         progress_bar.progress(min(100, (i + 1) * 10))
     
-    # 4. Executa a simulação e obtém a média final, dados de plotagem e contagens
+    # 4. Run the simulation and get the final mean, plot data, and counts
     mean, data_points, heads_count, tails_count = toss_coin(number_of_trials, chart_placeholder) 
 
-    # 5. Limpa a barra de progresso
+    # 5. Clear the progress bar
     progress_bar.empty()
 
-    # 6. Cria o registro de um único experimento
+    # 6. Create the single experiment record
     new_result = pd.DataFrame(
-        # NOVO: Inclui heads_count e tails_count
+        # NEW: Includes heads_count and tails_count
         [[st.session_state['experiment_no'], number_of_trials, mean, heads_count, tails_count]],
-        # Colunas internas (fixas)
+        # Internal columns (fixed)
         columns=['no', 'iterations', 'mean', 'heads', 'tails'] 
     )
     
-    # 7. Concatena o novo resultado com o DataFrame persistente
+    # 7. Concatenate the new result with the persistent DataFrame
     st.session_state['df_experiment_results'] = pd.concat(
         [st.session_state['df_experiment_results'], new_result],
         ignore_index=True 
     )
     
-    # Mensagem de sucesso (dinâmica)
+    # Success message (dynamic)
     st.success(get_text('success_message').format(n=st.session_state["experiment_no"], mean=mean))
-    
-    # NOVO: Contadores de Caras e Coroas (Bonitos)
-    st.markdown("---")
-    st.subheader(get_text('result_counts_header'))
-    
-    col_heads, col_tails, col_filler = st.columns([1, 1, 3])
-    
-    with col_heads:
-        # st.metric para um display visualmente bonito
-        st.metric(get_text('heads_label'), heads_count)
-        
-    with col_tails:
-        st.metric(get_text('tails_label'), tails_count)
-    st.markdown("---") 
 
 
-# --- Exibição dos Resultados e Opções ---
+# === END OF NEW LOCATION ===
+
+# NEW: Heads and Tails Counters (Visual)
+st.markdown("---")
+
+# Título fora do contêiner
+st.subheader(get_text('result_counts_header'))
+
+col_heads, col_tails, col_filler = st.columns([1, 1, 3])
+
+# Variáveis para garantir que o resultado mais recente seja usado
+last_heads = 0
+last_tails = 0
+last_mean = 0.0 # NEW: Get the mean value
+total_tosses = 0
+
+if not st.session_state['df_experiment_results'].empty:
+    last_heads = st.session_state['df_experiment_results']['heads'].iloc[-1]
+    last_tails = st.session_state['df_experiment_results']['tails'].iloc[-1]
+    last_mean = st.session_state['df_experiment_results']['mean'].iloc[-1] # NEW: Get the mean
+    total_tosses = st.session_state['df_experiment_results']['iterations'].iloc[-1]
+    
+# Calculate percentages using the mean (which is the Heads proportion)
+heads_percent = last_mean * 100 
+tails_percent = (1 - last_mean) * 100
+
+with col_heads:
+    # Start HTML wrapper for success style (Green) and inject content
+    st.markdown(f"""
+        <div class="heads-container">
+            <p class="metric-label-in-container">{get_text("heads_label")}</p>
+            <p class="metric-value-in-container">{last_heads}</p>
+            <p class="metric-percentage">({heads_percent:.1f}%)</p>
+        </div>
+    """, unsafe_allow_html=True) 
+    
+with col_tails:
+    # Start HTML wrapper for info style (Blue) and inject content
+    st.markdown(f"""
+        <div class="tails-container">
+            <p class="metric-label-in-container">{get_text("tails_label")}</p>
+            <p class="metric-value-in-container">{last_tails}</p>
+            <p class="metric-percentage">({tails_percent:.1f}%)</p>
+        </div>
+    """, unsafe_allow_html=True)
+    
+st.markdown("---") 
+
+
+# --- Display Results and Options ---
 st.write('---')
-# Subcabeçalho dinâmico
+# Dynamic subheader
 st.subheader(get_text('history_header'))
 
-# NOVO: Cria um DataFrame temporário para a exibição com os nomes traduzidos
+# NEW: Create a temporary DataFrame for display with translated names
 df_display = st.session_state['df_experiment_results'].copy()
-# Renomeia as colunas para o idioma atual antes de exibir
+# Rename columns to the current language before displaying
 df_display.rename(columns={
     'no': get_text('no_col'),
     'iterations': get_text('iterations_col'),
@@ -346,13 +433,13 @@ df_display.rename(columns={
     'tails': get_text('tails_col'),
 }, inplace=True)
 
-# Exibe o DataFrame salvo na sessão
+# Display the saved DataFrame in the session
 st.dataframe(df_display, hide_index=True)
 
-# Contêiner para os botões de Download e Limpar
+# Container for Download and Clear buttons
 col_download, col_clear, _ = st.columns([1, 1, 3])
 
-# 8. Adiciona o botão de download (rótulo dinâmico)
+# 8. Add the download button (dynamic label)
 with col_download:
     csv_data = st.session_state['df_experiment_results'].to_csv(index=False).encode('utf-8')
     st.download_button(
@@ -363,7 +450,7 @@ with col_download:
         disabled=st.session_state['experiment_no'] == 0
     )
 
-# 9. Adiciona o botão para limpar o histórico (rótulo dinâmico)
+# 9. Add the button to clear the history (dynamic label)
 with col_clear:
     st.button(
         get_text('clear_button'), 
