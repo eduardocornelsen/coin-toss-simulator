@@ -8,45 +8,65 @@ import altair as alt # NOVO: Importe para visualização avançada
 TEXTS = {
     'pt': {
         'title': '🪙 Jogando uma moeda',
-        'description': "Este experimento simula o lançamento de uma moeda não viciada (probabilidade $P=0.5$). A **Lei dos Grandes Números** diz que, quanto mais lançamentos você fizer, mais a média observada (proporção de Caras) se aproximará do valor esperado teórico de 0.5. Use o controle deslizante para definir o número de tentativas e clique em **Executar** para iniciar.",
+        'description': "Este experimento simula o lançamento de uma moeda não viciada (probabilidade $P=0.5$). A **Lei dos Grandes Números** diz que, quanto mais lançamentos você fizer, mais a média observada (**Proporção de Caras**) se aproximará do valor esperado teórico de 0.5. Use o controle deslizante para definir o número de tentativas e clique em **Executar** para iniciar.",
         'slider_label': 'Número de tentativas?',
         'execute_button': 'Executar',
         'running_message': '🚀 Executando o Experimento de {n} tentativas.',
-        'success_message': '✅ Experimento #{n} concluído. Média: {mean:.4f}',
+        'success_message': '✅ Experimento #{n} concluído. Proporção de Caras: {mean:.4f}',
         'history_header': '📊 Histórico de Resultados Acumulados',
         'download_button': 'Baixar Resultados (CSV)',
         'clear_button': 'Limpar Histórico',
         'caption': 'Ainda não é um aplicativo funcional. Em construção.',
-        'graph_title_1': 'Convergência da Média para o Valor Esperado',
+        # ÊNFASE NOS GRÁFICOS E EIXOS PARA 'PROPORÇÃO DE CARAS'
+        'graph_title_1': 'Convergência da Proporção de Caras para o Valor Esperado',
         'graph_title_2': '(Lei dos Grandes Números)',
         'x_axis': 'Número de Lançamentos',
-        'y_axis': 'Média de Ocorrências',
-        'sim_legend': 'Simulação',
+        'y_axis': 'Proporção de Caras (Média)',
+        'sim_legend': 'Simulação (Caras)',
         'exp_legend': 'Esperado (Teórico)',
+        # NOVO: Chaves para Contadores e Tabela
+        'result_counts_header': 'Contagem Final do Último Experimento',
+        'heads_label': 'Caras (Heads)',
+        'tails_label': 'Coroas (Tails)',
+        'no_col': 'No.',
+        'iterations_col': 'Tentativas',
+        'mean_col': 'Proporção (Caras)',
+        'heads_col': 'Caras',
+        'tails_col': 'Coroas',
         'clear_toast': 'Histórico de experimentos limpo!',
-        'language_button': 'Switch to English 🇺🇸',
-        'mean_type_label': 'Tipo de Média' # NOVO: Rótulo da coluna da legenda
+        'language_button': 'Switch to English 🇬🇧',
+        'mean_type_label': 'Tipo de Proporção'
     },
     'en': {
         'title': '🪙 Coin Toss Simulation',
-        'description': "This experiment simulates the toss of an unbiased coin (probability $P=0.5$). The **Law of Large Numbers** states that the more trials you run, the closer the observed mean (proportion of Heads) will approach the theoretical expected value of 0.5. Use the slider to set the number of trials and click **Execute** to start.",
+        'description': "This experiment simulates the toss of an unbiased coin (probability $P=0.5$). The **Law of Large Numbers** states that the more trials you run, the closer the observed mean (**Heads Proportion**) will approach the theoretical expected value of 0.5. Use the slider to set the number of trials and click **Execute** to start.",
         'slider_label': 'Number of trials?',
         'execute_button': 'Execute',
         'running_message': '🚀 Running Experiment with {n} trials.',
-        'success_message': '✅ Experiment #{n} finished. Mean: {mean:.4f}',
+        'success_message': '✅ Experiment #{n} finished. Heads Proportion: {mean:.4f}',
         'history_header': '📊 Accumulated Results History',
         'download_button': 'Download Results (CSV)',
         'clear_button': 'Clear History',
         'caption': 'This is not yet a functional application. Under construction.',
-        'graph_title_1': 'Convergence of the Mean to the Expected Value',
+        # ÊNFASE NOS GRÁFICOS E EIXOS PARA 'PROPORTION OF HEADS'
+        'graph_title_1': 'Convergence of Heads Proportion to the Expected Value',
         'graph_title_2': '(Law of Large Numbers)',
         'x_axis': 'Number of Tosses',
-        'y_axis': 'Mean of Occurrences',
-        'sim_legend': 'Simulation',
+        'y_axis': 'Proportion of Heads (Mean)',
+        'sim_legend': 'Simulation (Heads)',
         'exp_legend': 'Expected (Theoretical)',
+        # NOVO: Chaves para Contadores e Tabela
+        'result_counts_header': 'Absolute Counts of Last Experiment',
+        'heads_label': 'Heads',
+        'tails_label': 'Tails',
+        'no_col': 'No.',
+        'iterations_col': 'Trials',
+        'mean_col': 'Proportion (Heads)',
+        'heads_col': 'Heads',
+        'tails_col': 'Tails',
         'clear_toast': 'Experiment history cleared!',
         'language_button': 'Mudar para Português 🇧🇷',
-        'mean_type_label': 'Mean Type' # NOVO: Rótulo da coluna da legenda
+        'mean_type_label': 'Proportion Type'
     }
 }
 
@@ -102,14 +122,14 @@ if 'experiment_no' not in st.session_state:
     st.session_state['experiment_no'] = 0 
 
 if 'df_experiment_results' not in st.session_state:
-    # Inicializa o DataFrame para armazenar os resultados
-    st.session_state['df_experiment_results'] = pd.DataFrame(columns=['no', 'iterations', 'mean'])
+    # CORRIGIDO: Adiciona colunas para contagem absoluta de Caras e Coroas
+    st.session_state['df_experiment_results'] = pd.DataFrame(columns=['no', 'iterations', 'mean', 'heads', 'tails'])
 
 # --- Função de Callback para Limpar Resultados ---
 def clear_results():
     """Limpa o contador e o DataFrame de resultados no Session State."""
     st.session_state['experiment_no'] = 0
-    st.session_state['df_experiment_results'] = pd.DataFrame(columns=['no', 'iterations', 'mean'])
+    st.session_state['df_experiment_results'] = pd.DataFrame(columns=['no', 'iterations', 'mean', 'heads', 'tails'])
     st.toast(get_text('clear_toast'), icon='🗑️')
 
 # --- Função de Criação do Gráfico Altair ---
@@ -156,7 +176,7 @@ def create_altair_chart(data_points):
     line = base.mark_line().encode(
         # Condição que aplica o estilo tracejado/pontilhado à linha 'Esperado (Teórico)' (usando o texto dinâmico)
         strokeDash=alt.condition(
-            alt.datum['Tipo de Média'] == get_text('exp_legend'),
+            alt.datum[mean_type_column_name] == get_text('exp_legend'), # Usa a coluna traduzida aqui
             alt.value([5, 5]), # [tamanho do traço, tamanho do espaço]
             alt.value([0])     # Linha sólida para Simulação
         )
@@ -177,13 +197,14 @@ st.header(get_text('title'))
 
 # 2. Botão de Idioma (Menos alto, mais largo, alinhado à esquerda)
 # Usamos colunas para controlar a largura, mantendo o alinhamento esquerdo
-col_lang_wide, _ = st.columns([1.5, 5]) # Coluna 1.5 para o botão, 5 para o espaço vazio
+col_btn_lang, _ = st.columns([2, 5]) # Coluna 2/7 para o botão, 5/7 vazia para torná-lo mais largo que o padrão
 
-with col_lang_wide:
+with col_btn_lang:
     st.button(
         get_text('language_button'), 
         on_click=toggle_language, 
-        use_container_width=True # Garante que ele ocupe a largura da coluna 1.5
+        use_container_width=True, # Garante que ele preencha a largura da coluna [2]
+        key="lang_button" # Adicionado key para maior estabilidade
     )
 
 # 3. Descrição do Experimento agora é dinâmica
@@ -202,16 +223,16 @@ chart_placeholder.altair_chart(
 def toss_coin(n, chart_placeholder):
     """Simula o lançamento de moeda, coleta a média e renderiza o gráfico progressivamente."""
     
+    # 1. Simulação: 1 = Cara (Heads), 0 = Coroa (Tails)
     trial_outcomes = scipy.stats.bernoulli.rvs(p=0.5, size=n)
     
     # MUDANÇA AQUI: Começa a lista de pontos com o estado inicial (0 iterações)
     data_points = [{'Simulação': 0.5, 'Esperado (Teórico)': 0.5}]
     
     outcome_no = 0
-    outcome_1_count = 0
+    outcome_1_count = 0 # Contagem de Caras
     
     # Define a frequência de renderização para simular a animação (máximo 50 updates)
-    # RENDER_FREQUENCY garante que o gráfico não tente renderizar a cada lançamento em n=1000
     RENDER_FREQUENCY = max(1, n // 50) 
 
     # Itera sobre os resultados
@@ -226,8 +247,6 @@ def toss_coin(n, chart_placeholder):
         data_points.append({'Simulação': mean, 'Esperado (Teórico)': 0.5})
 
         # NOVO: Renderiza o gráfico periodicamente
-        # Renderiza no último ponto ou quando atingir a frequência definida
-        # O índice (i) aqui se refere ao trial_outcomes (0 a n-1).
         if i == n - 1 or (i + 1) % RENDER_FREQUENCY == 0:
             chart_placeholder.altair_chart(
                 create_altair_chart(data_points), 
@@ -235,7 +254,11 @@ def toss_coin(n, chart_placeholder):
             )
             time.sleep(0.1) # Pausa aumentada para 0.1s para desacelerar a animação
 
-    return mean, data_points # Retorna a média final E a lista de pontos
+    # NOVO: Calcula a contagem final de Coroas (Tails)
+    outcome_0_count = n - outcome_1_count
+    
+    # CORRIGIDO: Retorna a média final, a lista de pontos E as contagens absolutas
+    return mean, data_points, outcome_1_count, outcome_0_count 
 
 
 # --- Interface do Usuário (Slider e Botão Lado a Lado) ---
@@ -269,17 +292,18 @@ if start_button:
         time.sleep(0.02)
         progress_bar.progress(min(100, (i + 1) * 10))
     
-    # 4. Executa a simulação e obtém a média final e os dados de plotagem
-    mean, data_points = toss_coin(number_of_trials, chart_placeholder) 
+    # 4. Executa a simulação e obtém a média final, dados de plotagem e contagens
+    mean, data_points, heads_count, tails_count = toss_coin(number_of_trials, chart_placeholder) 
 
     # 5. Limpa a barra de progresso
     progress_bar.empty()
 
     # 6. Cria o registro de um único experimento
     new_result = pd.DataFrame(
-        [[st.session_state['experiment_no'], number_of_trials, mean]],
-        # As colunas internas do DataFrame devem permanecer fixas
-        columns=['no', 'iterations', 'mean']
+        # NOVO: Inclui heads_count e tails_count
+        [[st.session_state['experiment_no'], number_of_trials, mean, heads_count, tails_count]],
+        # Colunas internas (fixas)
+        columns=['no', 'iterations', 'mean', 'heads', 'tails'] 
     )
     
     # 7. Concatena o novo resultado com o DataFrame persistente
@@ -290,6 +314,20 @@ if start_button:
     
     # Mensagem de sucesso (dinâmica)
     st.success(get_text('success_message').format(n=st.session_state["experiment_no"], mean=mean))
+    
+    # NOVO: Contadores de Caras e Coroas (Bonitos)
+    st.markdown("---")
+    st.subheader(get_text('result_counts_header'))
+    
+    col_heads, col_tails, col_filler = st.columns([1, 1, 3])
+    
+    with col_heads:
+        # st.metric para um display visualmente bonito
+        st.metric(get_text('heads_label'), heads_count)
+        
+    with col_tails:
+        st.metric(get_text('tails_label'), tails_count)
+    st.markdown("---") 
 
 
 # --- Exibição dos Resultados e Opções ---
@@ -297,8 +335,19 @@ st.write('---')
 # Subcabeçalho dinâmico
 st.subheader(get_text('history_header'))
 
+# NOVO: Cria um DataFrame temporário para a exibição com os nomes traduzidos
+df_display = st.session_state['df_experiment_results'].copy()
+# Renomeia as colunas para o idioma atual antes de exibir
+df_display.rename(columns={
+    'no': get_text('no_col'),
+    'iterations': get_text('iterations_col'),
+    'mean': get_text('mean_col'),
+    'heads': get_text('heads_col'),
+    'tails': get_text('tails_col'),
+}, inplace=True)
+
 # Exibe o DataFrame salvo na sessão
-st.dataframe(st.session_state['df_experiment_results'], hide_index=True)
+st.dataframe(df_display, hide_index=True)
 
 # Contêiner para os botões de Download e Limpar
 col_download, col_clear, _ = st.columns([1, 1, 3])
