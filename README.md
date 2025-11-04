@@ -8,7 +8,6 @@ A minimal, demonstrative web application built with Python and **Streamlit**, de
 
 ![cover-cut-600px](https://github.com/user-attachments/assets/7f9b3b63-76ca-4bb6-881d-4b0b736c49d5)
 
-<div align='center'>
   <a href="https://streamlit-example-8meo.onrender.com/3" style="text-decoration: none;">
     <img src="https://img.shields.io/badge/Try%20The%20Live%20App%20_(EN/PT)-a53825?style=for-the-badge&logo=rocket&logoColor=FFFFFF" 
         alt="View Project" 
@@ -16,9 +15,6 @@ A minimal, demonstrative web application built with Python and **Streamlit**, de
   </a>
 
   *(Note: If the app takes a moment to load, it is because it is hosted on a free tier service and is waking up from inactivity.)*
-
-</div>
-
 
 </div>
 
